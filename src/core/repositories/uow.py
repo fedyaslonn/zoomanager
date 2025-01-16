@@ -1,11 +1,19 @@
-from typing import Protocol, Type
+from typing import Protocol, Type, Optional
 
-from src.core.repository.user_repository import UserRepositoryProtocol
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
 
+from src.core.models.session_factory import async_session
+
+from typing import TYPE_CHECKING
+
+
+if TYPE_CHECKING:
+    from src.core.repositories.user_repository import UserRepositoryProtocol, UserRepository
+    from src.core.repositories.animals_repository import AnimalsRepositoryProtocol, AnimalsRepository
 
 class IUnitOfWork(Protocol):
-    users: Type[UserRepositoryProtocol]
+    users: "UserRepositoryProtocol"
+    animals: "AnimalsRepositoryProtocol"
 
     async def __aenter__(self):
         ...
@@ -20,13 +28,14 @@ class IUnitOfWork(Protocol):
         ...
 
 class UnitOfWork:
-    def __init__(self, session_factory: async_sessionmaker[AsyncSession]):
-        self.session_factory = session_factory
+    def __init__(self, session: AsyncSession):
+        self.session: AsyncSession = session
 
     async def __aenter__(self):
-        self.session = self.session_factory()
-
+        from src.core.repositories.animals_repository import AnimalsRepositoryProtocol, AnimalsRepository
+        from src.core.repositories.user_repository import UserRepositoryProtocol, UserRepository
         self.users = UserRepository(self.session)
+        self.animals = AnimalsRepository(self.session)
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
@@ -40,3 +49,7 @@ class UnitOfWork:
 
     async def rollback(self):
         await self.session.rollback()
+
+async def get_uow() -> UnitOfWork:
+    async with async_session() as session:
+        yield UnitOfWork(session)

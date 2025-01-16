@@ -35,13 +35,11 @@ class Animal(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     master_id: Mapped[Optional[int]] = mapped_column(ForeignKey("user.id", ondelete="SET NULL"), nullable=True)
-    name: Mapped[str] = mapped_column(String(16))
     species: Mapped[str] = mapped_column(String(16))
     age: Mapped[int] = mapped_column(Integer)
     created_at: Mapped[datetime] = mapped_column(default=datetime.utcnow)
     master: Mapped[Optional["User"]] = relationship(back_populates="animals")
 
-    def __init__(self, name: str, species: str, age: int):
-        self.name = name
+    def __init__(self, species: str, age: int):
         self.species = species
         self.age = age

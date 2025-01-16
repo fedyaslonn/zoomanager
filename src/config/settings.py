@@ -4,8 +4,11 @@ from dotenv import load_dotenv
 import sys
 from pydantic import BaseModel
 from pydantic.v1 import BaseSettings, Field
+import logging
 
 load_dotenv()
+
+logger = logging.getLogger(__name__)
 
 class DBSettings(BaseSettings):
     host: str = Field(env="DB_HOST")
@@ -20,21 +23,17 @@ class DBSettings(BaseSettings):
 
 @dataclass
 class Settings:
-    SECRET_KEY: str = os.getenv("")
+    SECRET_KEY: str = os.getenv("access_secret_key")
+    REFRESH_SECRET_KEY: str = os.getenv("refresh_secret_key")
     TOKEN_TYPE: str = os.getenv("TOKEN_TYPE")
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int =  30
     REFRESH_TOKEN_EXPIRE_MINUTES: int = 60*24*15
 
 
-pythonpath = os.getenv('PYTHONPATH')
-
-if pythonpath:
-    sys.path.append(pythonpath)
-
 class TunedModel(BaseModel):
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 settings = Settings()
